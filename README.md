@@ -1,79 +1,80 @@
-# Antigravity Account Switcher
+<div align="center">
+  <img src="icon.png" width="128" height="128" alt="Antigravity Account Switcher Logo">
+  <h1>Antigravity Account Switcher</h1>
+  <p><b>Switch between multiple Google accounts in Antigravity IDE with one click.</b></p>
+
+  <p>
+    <img src="https://img.shields.io/badge/version-2.1.0-blue.svg" alt="Version">
+    <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
+    <img src="https://img.shields.io/badge/platform-VS%20Code-007ACC.svg" alt="Platform">
+  </p>
+</div>
+
+---
 
 > Switch between multiple Google accounts in [Antigravity IDE](https://antigravity.google) with one click — no manual logout/login needed.
 
-## The problem
+## 🚀 The Problem
 
-Antigravity only supports **one active Google account** at a time. When your quota runs out, you have to:
+Antigravity IDE only supports **one active Google account** at a time. When your quota runs out, the manual sign-out/sign-in process is slow and repetitive. This extension makes it a **single click**.
 
-1. Sign out
-2. Sign in with another Gmail
-3. Wait for it to load
+## ⚙️ How it works
 
-This extension makes that **one click**.
-
-## How it works
-
-Your auth tokens are saved locally for each account. When you switch, the extension swaps the tokens and restarts Antigravity — you're instantly logged in as the new account.
+Your auth tokens are saved locally for each account. When you switch, the extension swaps the tokens and restarts the IDE — you're instantly logged in as the new account.
 
 ```
 ~/.antigravity-switcher/
-  config.json          ← account list
+  config.json          ← Account registry
   accounts/
-    111111/            ← account 1 tokens
-    222222/            ← account 2 tokens
-    333333/            ← account 3 tokens
+    111111/            ← Gmail #1 tokens
+    222222/            ← Gmail #2 tokens
 ```
 
-No data leaves your machine.
+*Privacy: All data stays on your local machine. No external tracking or servers.*
 
-## Install
+## 📦 Installation
 
-### Option A — from VSIX (recommended)
+### Option A — From GitHub Releases (Recommended)
 
-1. Download the latest `.vsix` from [Releases](../../releases)
-2. In Antigravity: `Extensions` → `...` → **Install from VSIX**
+1.  Go to the **[Releases](../../releases)** page.
+2.  Download the latest `.vsix` file (e.g., `antigravity-switcher-2.1.0.vsix`).
+3.  In Antigravity/VS Code:
+    *   Open **Extensions** (`Ctrl+Shift+X`).
+    *   Click the **`...`** (Views and More Actions) in the top right.
+    *   Select **Install from VSIX...**
+    *   Choose the downloaded file.
 
-### Option B — build from source
+### Option B — Build from Source
 
 ```bash
 git clone https://github.com/zecoryx/antigravity-switcher
 cd antigravity-switcher
-npm install -g @vscode/vsce
-vsce package --no-dependencies
+npm install
+npx vsce package --no-dependencies
 ```
 
-## Usage
+## 🛠 Usage
 
-### Step 1 — Add accounts
+### 1. Add Accounts
+- Sign in to Antigravity with **Gmail #1**.
+- Open Command Palette (`Ctrl+Shift+P`) → search for **"Antigravity: Add Account"**.
+- Enter your email and a nickname.
+- **Sign out** and repeat for **Gmail #2**.
 
-- Sign in to Antigravity with **Gmail #1**
-- `Ctrl+Shift+P` → **"Antigravity: Add Account"**
-- Enter your email + a nickname (e.g. "Work", "Personal")
-- Sign out → sign in with **Gmail #2** → repeat
+### 2. Switch
+Click the **`👤 Account Name`** in the status bar (bottom left) or use the **Accounts Panel** in the sidebar.
 
-### Step 2 — Switch
+## 🤖 Automated Release (For Developers)
 
-Click the **`👤 Account Name`** button in the status bar (bottom left)
+This project is automated with GitHub Actions. To push a new release:
+1. Update version in `package.json`.
+2. Push a new tag:
+   ```bash
+   git tag v2.2.0
+   git push origin v2.2.0
+   ```
+The CI/CD will automatically build the VSIX and create a GitHub Release.
 
-Or `Ctrl+Shift+P` → **"Antigravity: Switch Account"**
+## 📄 License
 
-Select an account → **"Restart Now"** → done.
-
-## Commands
-
-| Command                       | Description                      |
-| ----------------------------- | -------------------------------- |
-| `Antigravity: Add Account`    | Save current login as an account |
-| `Antigravity: Switch Account` | Switch to another account        |
-| `Antigravity: Remove Account` | Remove a saved account           |
-
-## Security
-
-- Tokens stored in `~/.antigravity-switcher/` on your local machine only
-- No network requests, no third-party services
-- MIT licensed, fully open source
-
-## License
-
-MIT
+MIT Licensed. Open source and free to use.
