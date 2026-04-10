@@ -1,0 +1,73 @@
+{
+  "name": "antigravity-switcher",
+  "displayName": "Antigravity Account Switcher",
+  "description": "Switch between multiple Google accounts in Antigravity IDE. Includes quota monitor and sidebar panel.",
+  "version": "2.1.0",
+  "publisher": "zecoryx",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zecoryx/antigravity-switcher"
+  },
+  "homepage": "https://github.com/zecoryx/antigravity-switcher#readme",
+  "bugs": { "url": "https://github.com/zecoryx/antigravity-switcher/issues" },
+  "license": "MIT",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": [
+    "Other",
+    "Programming Languages"
+  ],
+  "keywords": ["antigravity", "google", "account", "switcher", "quota", "gmail"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "antigravity-switcher.addAccount",    "title": "Antigravity: Add Account",    "icon": "$(add)" },
+      { "command": "antigravity-switcher.switchAccount", "title": "Antigravity: Switch Account" },
+      { "command": "antigravity-switcher.removeAccount", "title": "Antigravity: Remove Account" },
+      { "command": "antigravity-switcher.renameAccount", "title": "Antigravity: Rename Account" },
+      { "command": "antigravity-switcher.showQuota",     "title": "Antigravity: Show Quota" },
+      { "command": "antigravity-switcher.refreshQuota",  "title": "Antigravity: Refresh Quota",  "icon": "$(refresh)" },
+      { "command": "antigravity-switcher.openPanel",     "title": "Antigravity: Open Account Panel" }
+    ],
+    "keybindings": [
+      {
+        "command": "antigravity-switcher.switchAccount",
+        "key": "ctrl+alt+a",
+        "mac": "cmd+alt+a"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "antigravity-switcher",
+          "title": "Antigravity Accounts",
+          "icon": "$(account)"
+        }
+      ]
+    },
+    "views": {
+      "antigravity-switcher": [
+        {
+          "type": "webview",
+          "id": "antigravity-switcher.panel",
+          "name": "Accounts"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "antigravity-switcher.addAccount",
+          "when": "view == antigravity-switcher.panel",
+          "group": "navigation"
+        },
+        {
+          "command": "antigravity-switcher.refreshQuota",
+          "when": "view == antigravity-switcher.panel",
+          "group": "navigation"
+        }
+      ]
+    }
+  }
+}
