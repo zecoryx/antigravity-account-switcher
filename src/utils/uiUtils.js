@@ -46,7 +46,15 @@ function escHtml(str) {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
+ * Escapes characters for use in HTML attributes.
+ */
+function escAttr(str) {
+    return escHtml(str).replace(/\\/g, '\\\\');
 }
 
 module.exports = {
@@ -54,5 +62,6 @@ module.exports = {
     formatReset,
     avatarLetter,
     getAvatarColor,
-    escHtml
+    escHtml,
+    escAttr
 };

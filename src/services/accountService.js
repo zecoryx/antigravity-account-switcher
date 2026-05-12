@@ -1,8 +1,8 @@
-const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { PATHS } = require('../constants');
-const { copyDir, removeDir } = require('../utils/fsUtils');
+const configRepository = require('../repositories/configRepository');
+const tokenRepository = require('../repositories/tokenRepository');
+const { isSafeId } = require('../utils/fsUtils');
 
 class AccountService {
     static getAuthTokensPath() {
@@ -13,71 +13,84 @@ class AccountService {
         }
     }
 
-    readConfig() {
-        try {
-            if (!fs.existsSync(PATHS.CONFIG_FILE)) return { accounts: [], active: null };
-            return JSON.parse(fs.readFileSync(PATHS.CONFIG_FILE, 'utf8'));
-        } catch {
-            return { accounts: [], active: null };
-        }
-    }
-
-    writeConfig(config) {
-        fs.mkdirSync(path.dirname(PATHS.CONFIG_FILE), { recursive: true });
-        fs.writeFileSync(PATHS.CONFIG_FILE, JSON.stringify(config, null, 2));
+    async readConfig() {
+        return configRepository.read();
     }
 
     async switchAccount(targetId) {
-        const config = this.readConfig();
-        const picked = config.accounts.find(a => a.id === targetId);
-        if (!picked) throw new Error('Account not found');
+        if (!isSafeId(targetId)) throw new Error('Security Error: Invalid account ID format');
+
+        const config = await this.readConfig();
+        const targetAccount = config.accounts.find(a => a.id === targetId);
+        if (!targetAccount) throw new Error('Business Error: Target account not found in configuration');
 
         const authPath = AccountService.getAuthTokensPath();
-        const accountsDir = PATHS.ACCOUNTS_DIR;
 
-        // Save current tokens
-        if (config.active && fs.existsSync(authPath)) {
-            copyDir(authPath, path.join(accountsDir, config.active));
+        // Save current session if active
+        if (config.active && tokenRepository.tokensExist(authPath)) {
+            await tokenRepository.saveTokens(config.active, authPath);
         }
 
-        // Load new tokens
-        removeDir(authPath);
-        copyDir(path.join(accountsDir, picked.id), authPath);
+        // Load new session
+        await tokenRepository.loadTokens(targetId, authPath);
 
-        config.active = picked.id;
-        this.writeConfig(config);
-        return picked;
+        // Persist state
+        config.active = targetId;
+        await configRepository.write(config);
+        
+        return targetAccount;
     }
 
-    addAccount(id, email, name) {
-        const config = this.readConfig();
+    async addAccount(id, email, name) {
+        if (!isSafeId(id)) throw new Error('Security Error: Invalid ID format for new account');
+        if (!email || !email.includes('@')) throw new Error('Validation Error: Invalid Gmail address');
+
         const authPath = AccountService.getAuthTokensPath();
-        
-        if (!fs.existsSync(authPath)) {
-            throw new Error('No active login. Sign in to Antigravity first.');
+        if (!tokenRepository.tokensExist(authPath)) {
+            throw new Error('Business Error: No active Antigravity session found. Please sign in first.');
         }
 
-        copyDir(authPath, path.join(PATHS.ACCOUNTS_DIR, id));
-        config.accounts.push({ id, email, name });
+        const config = await this.readConfig();
+        if (config.accounts.find(a => a.id === id || a.email === email)) {
+            throw new Error('Business Error: This account is already registered');
+        }
+
+        // Save session to permanent storage
+        await tokenRepository.saveTokens(id, authPath);
+
+        // Update config
+        config.accounts.push({ id, email, name: name || email.split('@')[0] });
         if (!config.active) config.active = id;
         
-        this.writeConfig(config);
+        await configRepository.write(config);
     }
 
-    removeAccount(id) {
-        const config = this.readConfig();
-        removeDir(path.join(PATHS.ACCOUNTS_DIR, id));
+    async removeAccount(id) {
+        if (!isSafeId(id)) throw new Error('Security Error: Invalid account ID format');
+
+        const config = await this.readConfig();
+        if (!config.accounts.find(a => a.id === id)) return;
+
+        // Cleanup files
+        await tokenRepository.deleteTokens(id);
+
+        // Update config
         config.accounts = config.accounts.filter(a => a.id !== id);
-        if (config.active === id) config.active = config.accounts[0]?.id || null;
-        this.writeConfig(config);
+        if (config.active === id) {
+            config.active = config.accounts[0]?.id || null;
+        }
+        
+        await configRepository.write(config);
     }
 
-    renameAccount(id, newName) {
-        const config = this.readConfig();
+    async renameAccount(id, newName) {
+        if (!newName || newName.trim().length === 0) throw new Error('Validation Error: Name cannot be empty');
+        
+        const config = await this.readConfig();
         const account = config.accounts.find(a => a.id === id);
         if (account) {
-            account.name = newName;
-            this.writeConfig(config);
+            account.name = newName.trim();
+            await configRepository.write(config);
         }
     }
 }

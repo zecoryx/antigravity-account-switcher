@@ -1,80 +1,53 @@
-<div align="center">
-  <img src="icon.png" width="128" height="128" alt="Antigravity Account Switcher Logo">
-  <h1>Antigravity Account Switcher</h1>
-  <p><b>Switch between multiple Google accounts in Antigravity IDE with one click.</b></p>
+# Antigravity Account Switcher
 
-  <p>
-    <img src="https://img.shields.io/badge/version-2.1.0-blue.svg" alt="Version">
-    <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
-    <img src="https://img.shields.io/badge/platform-VS%20Code-007ACC.svg" alt="Platform">
-  </p>
-</div>
+Antigravity Account Switcher is a professional-grade VS Code extension designed to provide seamless multi-account management for the Antigravity IDE ecosystem. It allows developers to switch between different Google identities, monitor usage quotas in real-time, and maintain isolated session states with zero friction.
 
----
+## Architecture Deep Dive
 
-> Switch between multiple Google accounts in [Antigravity IDE](https://antigravity.google) with one click — no manual logout/login needed.
+The system follows a strict **Layered Architecture** combined with the **Repository Pattern** to ensure high maintainability, testability, and a clear separation of concerns.
 
-## 🚀 The Problem
+### 1. Controller Layer (`src/extension.js`)
+Acts as the entry point and orchestrator. It is responsible for:
+- Interacting with the VS Code API (Commands, Status Bars, Webviews).
+- Routing user actions to the appropriate Services.
+- Handling UI state synchronization and error presentation.
 
-Antigravity IDE only supports **one active Google account** at a time. When your quota runs out, the manual sign-out/sign-in process is slow and repetitive. This extension makes it a **single click**.
+### 2. Service Layer (`src/services/`)
+Contains the core business logic and domain rules.
+- **AccountService:** Manages the lifecycle of account data, handles validation, and orchestrates complex multi-repository operations (e.g., switching an account requires both config updates and token migration).
+- **QuotaService:** Normalizes raw data from external processes and applies business rules for display thresholds.
 
-## ⚙️ How it works
+### 3. Repository Layer (`src/repositories/`)
+Strictly handles data access and external system communication.
+- **ConfigRepository:** Provides an abstract interface for the JSON-based configuration storage with built-in caching.
+- **TokenRepository:** Encapsulates the low-level file system operations required for session token migration.
+- **IdeRepository:** Handles raw process communication (port scanning) and HTTP interactions with the IDE backend.
 
-Your auth tokens are saved locally for each account. When you switch, the extension swaps the tokens and restarts the IDE — you're instantly logged in as the new account.
+## Tech Stack & Rationale
 
-```
-~/.antigravity-switcher/
-  config.json          ← Account registry
-  accounts/
-    111111/            ← Gmail #1 tokens
-    222222/            ← Gmail #2 tokens
-```
+- **Node.js & VS Code API:** Chosen for native integration and high-performance asynchronous execution.
+- **fs.promises:** Utilized for non-blocking I/O to ensure the VS Code Extension Host remains responsive during heavy directory operations.
+- **Custom Logger:** A centralized logging utility that bridges extension events to a dedicated OutputChannel for easier debugging and user support.
 
-*Privacy: All data stays on your local machine. No external tracking or servers.*
+## Core Logic Flow
 
-## 📦 Installation
+1. **User Action:** User clicks "Switch Account" in the status bar.
+2. **Controller:** `switchAccountHandler` triggers and displays a QuickPick menu.
+3. **Service:** `accountService.switchAccount(id)` validates the request and coordinates data movement.
+4. **Repository (Write):** `tokenRepository` saves the current session tokens to the secure local vault.
+5. **Repository (Read/Write):** `tokenRepository` retrieves the new account's tokens and restores them to the IDE's active path.
+6. **Repository (Config):** `configRepository` updates the `active` account ID in the persistent storage.
+7. **Controller (Feedback):** The status bar updates, and the user is prompted to restart the IDE.
 
-### Option A — From GitHub Releases (Recommended)
+## Edge Case Handling
 
-1.  Go to the **[Releases](../../releases)** page.
-2.  Download the latest `.vsix` file (e.g., `antigravity-switcher-2.1.0.vsix`).
-3.  In Antigravity/VS Code:
-    *   Open **Extensions** (`Ctrl+Shift+X`).
-    *   Click the **`...`** (Views and More Actions) in the top right.
-    *   Select **Install from VSIX...**
-    *   Choose the downloaded file.
+- **Path Traversal Protection:** All account IDs are strictly validated via alphanumeric regex before being used in file system paths.
+- **I/O Resilience:** Recursive directory operations are wrapped in robust error handling to prevent partial state corruption during account swaps.
+- **Graceful Degradation:** If the IDE process is not found or port scanning fails, the extension enters a "Limited Mode" where account management remains active but quota monitoring is paused.
+- **Error Sanitization:** Internal system paths and stack traces are automatically masked in user-facing error dialogs to prevent information leakage.
 
-### Option B — Build from Source
+## Future Scalability
 
-```bash
-git clone https://github.com/zecoryx/antigravity-switcher
-cd antigravity-switcher
-npm install
-npx vsce package --no-dependencies
-```
-
-## 🛠 Usage
-
-### 1. Add Accounts
-- Sign in to Antigravity with **Gmail #1**.
-- Open Command Palette (`Ctrl+Shift+P`) → search for **"Antigravity: Add Account"**.
-- Enter your email and a nickname.
-- **Sign out** and repeat for **Gmail #2**.
-
-### 2. Switch
-Click the **`👤 Account Name`** in the status bar (bottom left) or use the **Accounts Panel** in the sidebar.
-
-## 🤖 Automated Release (For Developers)
-
-This project is automated with GitHub Actions. To push a new release:
-1. Update version in `package.json`.
-2. Push a new tag:
-   ```bash
-   git tag v2.2.0
-   git push origin v2.2.0
-   ```
-The CI/CD will automatically build the VSIX and create a GitHub Release.
-
-## 📄 License
-
-MIT Licensed. Open source and free to use.
+- **Encrypted Storage:** The repository layer is designed to easily swap the current file-based token storage for more secure options like the VS Code SecretStorage API.
+- **Cloud Sync:** The layered structure allows for an optional "Cloud Sync" service to be added without modifying the UI or core repository logic.
+- **Multi-IDE Support:** By abstracting the `IdeRepository`, the extension can be extended to support other IDE backends (e.g., JetBrains, NeoVim) by simply adding new repository implementations.

@@ -1,5 +1,5 @@
 const { getMainHtml } = require('./htmlTemplates');
-const { avatarLetter, getAvatarColor, escHtml } = require('../utils/uiUtils');
+const { avatarLetter, getAvatarColor, escHtml, escAttr, formatReset } = require('../utils/uiUtils');
 
 class AccountPanelProvider {
     constructor(extensionUri, accountService) {
@@ -40,7 +40,7 @@ class AccountPanelProvider {
             const quotaHtml = this._buildQuotaRows(quota, isActive);
 
             return `
-        <div class="card ${isActive ? 'active' : ''}" data-id="${a.id}">
+        <div class="card ${isActive ? 'active' : ''}" data-id="${escAttr(a.id)}">
           <div class="card-glow"></div>
           <div class="card-content">
             <div class="card-header">
@@ -56,11 +56,11 @@ class AccountPanelProvider {
             </div>
             ${quotaHtml}
             <div class="actions">
-              ${!isActive ? `<button class="btn primary" onclick="send('switch','${a.id}')">
+              ${!isActive ? `<button class="btn primary" onclick="send('switch','${escAttr(a.id)}')">
                 <span class="icon">$(arrow-swap)</span> Switch
               </button>` : ''}
-              <button class="btn" onclick="send('rename','${a.id}')">$(edit) Rename</button>
-              <button class="btn danger" onclick="send('remove','${a.id}')">$(trash)</button>
+              <button class="btn" onclick="send('rename','${escAttr(a.id)}')">$(edit) Rename</button>
+              <button class="btn danger" onclick="send('remove','${escAttr(a.id)}')">$(trash)</button>
             </div>
           </div>
         </div>`;
